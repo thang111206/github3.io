@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thiệp Chúc Mừng & Nút Nhận Quà Tặng</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fcf4f5; 
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .card-container {
+            max-width: 600px;
+            background: linear-gradient(145deg, #ffffff 0%, #fff7f7 100%);
+            border: 4px solid #ff708a; 
+        }
+        .claim-button {
+            background-color: #ff4a68; 
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 20px -5px rgba(255, 74, 104, 0.5);
+            animation: pulse 2s infinite; 
+        }
+        .claim-button:hover:not(:disabled) {
+            background-color: #e53956;
+            transform: scale(1.05);
+            box-shadow: 0 15px 25px -5px rgba(255, 74, 104, 0.7);
+        }
+        .claim-button:disabled {
+            background-color: #fbcfe8; 
+            cursor: not-allowed;
+            animation: none;
+        }
+         
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card-container p-8 mx-auto rounded-3xl shadow-2xl w-full">
+        
+        <header class="text-center mb-6">
+            <h1 class="text-4xl font-extrabold text-[#ff4a68] mb-2">
+                Thiệp Chúc Mừng
+            </h1>
+            <p class="text-xl font-semibold text-gray-700" id="greeting-name">
+                Gửi đến Hoàng Thanh Mai!
+            </p>
+        </header>
+        
+        <main class="text-center mb-10">
+            <p class="text-gray-600 text-lg leading-relaxed mb-6">
+                Nhân dịp kỉ yếu Thanh Mai! Thật tiếc vì Cậu không đến được , nhưng chắc hẳn buổi lễ diễn ra rất tuyệt.Giờ đây , cháu đã chính thức hoàn thành một cột mốc quan trọng .Đây không phải là kết thúc mà là khởi đầu cho những mục tiêu lớn hơn.Chúc cháu luôn luôn xinh đẹp học giói,luôn luôn vui vẻ,là 1 con ngoan trò giỏi và đặc biệt là đỗ được đại học mong muốn [có nhiểu trai đẹp:))]
+            </p>
+            
+            
+            
+            
+            <div id="code-display-area" class="mt-6 p-4 bg-yellow-100 border-2 border-yellow-400 rounded-xl hidden">
+                Mã Quà Tặng Đặc Biệt của bạn: <span id="claim-code" class="font-bold text-xl text-yellow-800"></span>
+            </div>
+            
+        </main>
+        
+        
+        <form id="claim-form" action="https://formspree.io/f/mvgdbojq" method="POST" class="text-center">
+            
+            
+            <input type="hidden" name="Ma_Xac_Nhan_Da_Bam" id="hidden-code-input" value="KHONG_CO_MA">
+            
+            
+            <input type="hidden" name="Ten_Nguoi_Nhan" id="hidden-name-input" value="Nguoi Ban Yeu Quy">
+            
+            
+            <input type="hidden" name="_subject" id="subject-input" value="🔔 CÓ NGƯỜI NHẤN NHẬN QUÀ: [Mã Xác Nhận]">
+
+            <button type="submit" id="confirm-button" 
+                class="claim-button w-full px-12 py-5 text-white text-2xl font-bold rounded-full disabled:opacity-50">
+                🎁 Nhấn vào đây để xác nhận quà 🎁
+            </button>
+        </form>
+
+        <div id="message-box" class="mt-8 p-4 rounded-lg text-center font-medium hidden"></div>
+
+        <footer class="mt-8 text-center text-gray-500 text-sm border-t pt-4">
+            <p class="font-bold text-base text-pink-500 mb-1">
+                from Cậu Thắng
+            </p>
+            
+        </footer>
+        
+    </div>
+
+    <script>
+        // Khai báo các phần tử DOM
+        const claimForm = document.getElementById('claim-form');
+        const confirmButton = document.getElementById('confirm-button');
+        const messageBox = document.getElementById('message-box');
+        const claimCodeDisplay = document.getElementById('claim-code');
+        const hiddenCodeInput = document.getElementById('hidden-code-input');
+        const hiddenNameInput = document.getElementById('hidden-name-input');
+        const codeDisplayArea = document.getElementById('code-display-area');
+        const greetingName = document.getElementById('greeting-name');
+        const subjectInput = document.getElementById('subject-input');
+
+        let giftCode = null;
+        let recipientName = "Người Bạn Yêu Quý";
+
+        // URL bạn muốn chuyển hướng đến sau khi nhấn nút
+        const REDIRECT_URL = "https://panbap.github.io/chulove/index.html?data=eyJsaW5lMSI6IkhhcHB5IGdyYWR1YXRpb24iLCJsaW5lMiI6IiIsImhlYXJ0Ijoi8J%2BYmCIsIm11c2ljIjoiIn0%3D";
+
+
+        // Hàm hiển thị thông báo tùy chỉnh
+        function showMessage(text, bgColor, textColor, duration = 4000) {
+            messageBox.textContent = text;
+            messageBox.className = `mt-8 p-4 rounded-lg text-center font-medium ${bgColor} ${textColor}`;
+            messageBox.classList.remove('hidden');
+
+            setTimeout(() => {
+                messageBox.classList.add('hidden');
+            }, duration);
+        }
+
+        // Đọc Mã Quà Tặng và Tên Người Nhận từ URL
+        function getUrlParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return {
+                code: urlParams.get('code'),
+                name: urlParams.get('name')
+            };
+        }
+        
+        // Khởi tạo trạng thái ban đầu khi trang web tải xong
+        function initialize() {
+            const params = getUrlParams();
+            giftCode = params.code ? params.code.trim() : null;
+            recipientName = params.name ? decodeURIComponent(params.name.trim()) : "Cháu Thanh Mai";
+
+            // Cá nhân hóa thiệp chúc mừng
+            greetingName.textContent = 'Gửi đến ' + recipientName + '!';
+            hiddenNameInput.value = recipientName;
+            
+            // Đảm bảo nút luôn được kích hoạt
+            confirmButton.disabled = false;
+            
+            if (giftCode && giftCode.length > 3) {
+                // Trường hợp CÓ MÃ:
+                claimCodeDisplay.textContent = giftCode;
+                hiddenCodeInput.value = giftCode;
+                subjectInput.value = `🔔 CÓ NGƯỜI NHẤN NHẬN QUÀ: [Mã ${giftCode}]`;
+                
+                codeDisplayArea.classList.remove('hidden');
+                confirmButton.textContent = '🎁 Nhấn vào đây để xác nhận quà 🎁';
+            } else {
+                // Trường hợp KHÔNG CÓ MÃ:
+                codeDisplayArea.classList.add('hidden');
+                
+                confirmButton.disabled = false;
+                confirmButton.textContent = 'Bấm để nhận quà'; 
+                
+                hiddenCodeInput.value = 'KHONG_CO_MA';
+                subjectInput.value = '🔔 CÓ NGƯỜI NHẤN NHẬN QUÀ: [Mã KHONG_CO_MA]';
+            }
+
+            // Xử lý phản hồi từ Formspree (nếu có)
+            if (window.location.search.includes('_action=submit_success')) {
+                window.history.replaceState(null, null, window.location.pathname + window.location.search.replace(/&?_action=submit_success/, ''));
+
+                showMessage('✅ Xác nhận đã được gửi thành công!', 'bg-green-100', 'text-green-700', 8000);
+                confirmButton.disabled = true; 
+                confirmButton.textContent = 'ĐÃ GỬI XÁC NHẬN!';
+                
+            } else if (window.location.search.includes('_action=submit_fail')) {
+                window.history.replaceState(null, null, window.location.pathname + window.location.search.replace(/&?_action=submit_fail/, ''));
+                showMessage('❌ LỖI GỬI XÁC NHẬN! Vui lòng thử lại.', 'bg-red-100', 'text-red-700', 8000);
+            }
+        }
+        
+        
+        // XỬ LÝ SỰ KIỆN KHI BẤM NÚT: Gửi xác nhận ngầm và CHUYỂN HƯỚNG
+        claimForm.addEventListener('submit', function(e) {
+            // Ngăn chặn form gửi đi theo cách thông thường (là chuyển hướng đến Formspree)
+            e.preventDefault();
+            
+            confirmButton.disabled = true;
+            confirmButton.textContent = 'Đang chuyển quà...';
+
+            // 1. Gửi dữ liệu xác nhận CLICK qua Formspree (ngầm/background)
+            const formData = new FormData(claimForm);
+            fetch(claimForm.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => {
+                console.log('Xác nhận click đã được gửi ngầm qua Formspree.');
+            })
+            .catch(error => {
+                console.error('Lỗi khi gửi xác nhận ngầm:', error);
+            })
+            .finally(() => {
+                 // 2. Chuyển hướng đến link quà tặng, bất kể gửi ngầm thành công hay thất bại
+                window.location.href = REDIRECT_URL;
+            });
+        });
+
+        window.onload = initialize;
+    </script>
+</body>
+</html>
